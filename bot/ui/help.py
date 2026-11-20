@@ -32,7 +32,7 @@ def help_content(topic="start"):
             ),
             (
                 "3. Solve and check in",
-                "Open `/leetcode potd view` or `/gfg potd view`. Solve the problem on your connected account, then use `/solved platform:leetcode` or `/solved platform:gfg`. The bot verifies your accepted submission before awarding XP.",
+                "Open `/leetcode potd view` or `/gfg potd view`. Solve the problem on your connected account, then click **Mark as solved** on the POTD message or use `/solved platform:leetcode` or `/solved platform:gfg`. The bot verifies your accepted submission before awarding XP.",
             ),
             (
                 "4. Track your progress",

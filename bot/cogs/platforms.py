@@ -74,6 +74,13 @@ class PlatformsCog(commands.Cog):
         rows = [
             discord.ui.ActionRow(discord.ui.Button(label="Solve problem", url=problem.url)),
             discord.ui.ActionRow(
+                action_button(
+                    self.bot,
+                    provider,
+                    "check",
+                    "Mark as solved",
+                    style=discord.ButtonStyle.success,
+                ),
                 action_button(self.bot, provider, "board", "Leaderboard"),
                 action_button(self.bot, provider, "profile", "My profile"),
                 action_button(self.bot, provider, "help", "Help"),
