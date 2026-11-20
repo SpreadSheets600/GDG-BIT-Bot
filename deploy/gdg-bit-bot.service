@@ -1,0 +1,27 @@
+[Unit]
+Description=GDG BIT Discord Bot
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/GDG-BIT-Bot
+EnvironmentFile=/root/GDG-BIT-Bot/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/root/GDG-BIT-Bot/.venv/bin/python -m bot
+Restart=on-failure
+RestartSec=10
+KillSignal=SIGINT
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

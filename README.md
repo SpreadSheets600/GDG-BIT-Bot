@@ -50,3 +50,14 @@ ruff format --check bot tests
 python -m unittest discover -s tests
 gdg-check
 ```
+
+## VPS service
+
+Use `/root/GDG-BIT-Bot` with its `.venv`. Copy `.env` and `data/bot.db` to preserve accounts and settings.
+
+```sh
+cp deploy/gdg-bit-bot.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now gdg-bit-bot
+journalctl -u gdg-bit-bot -f
+```
