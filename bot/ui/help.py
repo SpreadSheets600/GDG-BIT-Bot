@@ -46,7 +46,7 @@ def help_content(topic="start"):
         fields = [
             (
                 "Scheduled delivery (administrators)",
-                "Use `/potd configure channel:#potd` to enable both platforms in one channel. `/potd status` shows settings. Set `enabled:false` to disable. LeetCode resets at 05:30 IST; GFG at 00:00 IST. No role pings are added.",
+                "Administrators can use `/potd configure channel:#potd` to enable both platforms in one channel, `/potd status` to view settings, and `/potd repost` to repost today's problems. Set `enabled:false` to disable scheduled delivery. LeetCode resets at 05:30 IST; GFG at 00:00 IST. No role pings are added.",
             ),
             (
                 "Today's problems",

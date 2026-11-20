@@ -120,9 +120,9 @@ class MemesCog(commands.Cog):
         name="configure",
         description="Choose the meme channel and wait between automatic posts",
         contexts={discord.InteractionContextType.guild},
-        default_member_permissions=discord.Permissions(manage_guild=True),
+        default_member_permissions=discord.Permissions(administrator=True),
     )
-    @commands.has_guild_permissions(manage_guild=True)
+    @commands.has_guild_permissions(administrator=True)
     async def configure(
         self,
         ctx: discord.ApplicationContext,

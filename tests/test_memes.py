@@ -1,3 +1,4 @@
+import inspect
 import json
 import sqlite3
 import tempfile
@@ -9,6 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import discord
+from discord.ext import commands
 from discord.webhook.async_ import handle_message_parameters
 
 from bot.main import create_bot
@@ -235,6 +237,16 @@ class MemeTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_admin_configuration_has_permission_check(self):
         self.assertTrue(self.cog.configure.checks)
+        ctx = SimpleNamespace(
+            guild=object(),
+            author=SimpleNamespace(
+                guild_permissions=SimpleNamespace(administrator=False, manage_guild=True)
+            ),
+        )
+        with self.assertRaises(commands.MissingPermissions):
+            result = self.cog.configure.checks[0](ctx)
+            if inspect.isawaitable(result):
+                await result
 
 
 if __name__ == "__main__":

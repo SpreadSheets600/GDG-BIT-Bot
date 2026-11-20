@@ -40,7 +40,7 @@ class POTDConfigurationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_configuration_requires_administrator_not_just_manage_server(self):
         self.ctx.author.guild_permissions = SimpleNamespace(administrator=False, manage_guild=True)
-        for command in (self.settings.configure, self.settings.status):
+        for command in (self.settings.configure, self.settings.status, self.settings.repost):
             self.assertTrue(command.checks)
             with self.assertRaises(commands.MissingPermissions):
                 result = command.checks[0](self.ctx)
@@ -51,6 +51,24 @@ class POTDConfigurationTests(unittest.IsolatedAsyncioTestCase):
             command for command in self.bot.pending_application_commands if command.name == "potd"
         )
         self.assertEqual(int(group.to_dict()["default_member_permissions"]), 8)
+
+    async def test_repost_sends_both_current_problems_to_the_configured_channel(self):
+        self.bot.storage.set_potd_settings(1, 2, False)
+
+        async def daily(provider):
+            return normalize_daily(
+                provider,
+                leetcode_payload() if provider == "leetcode" else gfg_payload(),
+                datetime.now(UTC),
+            )
+
+        self.bot.problems.daily = AsyncMock(side_effect=daily)
+        with patch.object(self.bot, "get_channel", return_value=self.channel):
+            await self.settings.repost.callback(self.settings, self.ctx)
+        self.assertEqual(self.channel.send.await_count, 2)
+        self.assertEqual(self.bot.problems.daily.await_args_list[0].args, ("leetcode",))
+        self.assertEqual(self.bot.problems.daily.await_args_list[1].args, ("gfg",))
+        self.assertTrue(self.ctx.followup.send.call_args.kwargs["ephemeral"])
 
     async def test_settings_persist_and_are_scoped_to_server(self):
         await self.settings.configure.callback(self.settings, self.ctx, self.channel)
@@ -91,7 +109,7 @@ class POTDConfigurationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.channel.send.await_count, 2)
         for call in self.channel.send.call_args_list:
             self.assertTrue(call.kwargs["view"].is_components_v2())
-            self.assertNotIn("daily:check", str(call.kwargs["view"].to_components()))
+            self.assertIn("Mark as solved", str(call.kwargs["view"].to_components()))
 
     async def test_disabled_schedule_never_posts(self):
         self.bot.storage.set_potd_settings(1, 2, False)

@@ -33,7 +33,7 @@ def daily_content(problem):
         title=clean(problem.title, 256),
         url=problem.url,
         color=COLOR,
-        description=f"Solve this problem on your connected account, then use `/solved platform:{problem.provider}`. Verified check-ins earn XP and extend your streak in this server.",
+        description=f"Solve this problem on your connected account, then click **Mark as solved** or use `/solved platform:{problem.provider}`. Verified check-ins earn XP and extend your streak in this server.",
     )
     embed.set_author(
         name="LeetCode · Problem of the Day"

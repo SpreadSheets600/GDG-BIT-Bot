@@ -47,6 +47,40 @@ class POTDSettingsCog(commands.Cog):
             view=notice(self.bot, "POTD delivery configured", text), ephemeral=True
         )
 
+    @potd.command(
+        name="repost",
+        description="Post today's LeetCode and GFG problems again in the configured channel",
+        default_member_permissions=discord.Permissions(administrator=True),
+    )
+    @commands.has_guild_permissions(administrator=True)
+    async def repost(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
+        settings = await asyncio.to_thread(self.bot.storage.potd_settings, ctx.guild.id)
+        if not settings:
+            raise ServiceError("Configure a POTD channel first with /potd configure.")
+        channel = self.bot.get_channel(settings["channel_id"]) or await self.bot.fetch_channel(
+            settings["channel_id"]
+        )
+        if not channel or getattr(getattr(channel, "guild", None), "id", None) != ctx.guild.id:
+            raise ServiceError("The configured POTD channel is no longer available in this server.")
+        permissions = channel.permissions_for(ctx.guild.me)
+        if not (permissions.view_channel and permissions.send_messages and permissions.embed_links):
+            raise ServiceError(
+                "The bot needs View Channel, Send Messages and Embed Links in the POTD channel."
+            )
+        daily = self.bot.get_cog("PlatformsCog")
+        for provider in ("leetcode", "gfg"):
+            problem = await self.bot.problems.daily(provider)
+            await channel.send(view=daily.daily_card(problem))
+        await ctx.followup.send(
+            view=notice(
+                self.bot,
+                "POTDs reposted",
+                f"Today's LeetCode and GFG problems were reposted in {channel.mention}.",
+            ),
+            ephemeral=True,
+        )
+
     @potd.command(name="status", description="Show the configured POTD channel and reset schedule")
     @commands.has_guild_permissions(administrator=True)
     async def status(self, ctx: discord.ApplicationContext):
