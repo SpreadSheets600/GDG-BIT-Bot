@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gdg-bit-potd"
+version = "2.0.0"
+description = "Discord POTD tracking, server leaderboards and developer memes"
+requires-python = ">=3.12"
+dependencies = [
+    "py-cord==2.8.1",
+    "aiohttp==3.14.5",
+    "python-dotenv==1.2.4",
+]
+
+[project.optional-dependencies]
+dev = ["ruff==0.17.6"]
+
+[project.scripts]
+gdg-bot = "bot.main:main"
+gdg-check = "bot.check:main"
+
+[tool.setuptools.packages.find]
+include = ["bot*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "SIM"]
