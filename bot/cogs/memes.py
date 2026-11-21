@@ -41,12 +41,10 @@ class MemesCog(commands.Cog):
             "view_channel",
             "send_messages",
             "embed_links",
-            "read_message_history",
-            "add_reactions",
         )
         if any(not getattr(permissions, name) for name in required):
             raise ServiceError(
-                "The meme channel needs View Channel, Send Messages, Embed Links, Read Message History and Add Reactions permissions for this bot."
+                "The meme channel needs View Channel, Send Messages and Embed Links permissions for this bot. Read Message History and Add Reactions are optional for reactions."
             )
 
     async def post(self, guild_id, *, scheduled_slot=None):
@@ -169,7 +167,11 @@ class MemesCog(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def deliver_memes(self):
-        settings = await asyncio.to_thread(self.bot.storage.enabled_meme_settings)
+        try:
+            settings = await asyncio.to_thread(self.bot.storage.enabled_meme_settings)
+        except Exception:
+            log.exception("Could not load meme schedules; will retry next minute")
+            return
         for config in settings:
             if time.time() < config["next_post_at"]:
                 continue

@@ -139,15 +139,16 @@ class MemeTests(unittest.IsolatedAsyncioTestCase):
             self.channel.send.assert_awaited_once()
         self.assertEqual(self.bot.storage.meme_settings(1)["next_post_at"], 22600)
 
-    async def test_manual_meme_resets_automatic_wait(self):
-        self.bot.storage.set_meme_settings(1, 2, True, 4)
+    async def test_manual_meme_does_not_postpone_automatic_delivery(self):
+        with patch("bot.services.memes.time.time", return_value=1000):
+            self.bot.storage.set_meme_settings(1, 2, True, 4)
         with (
             patch.object(self.bot, "get_channel", return_value=self.channel),
             patch.object(self.cog, "check_channel"),
             patch("bot.cogs.memes.time.time", return_value=10000),
         ):
             await self.cog.post(1)
-        self.assertEqual(self.bot.storage.meme_settings(1)["next_post_at"], 24400)
+        self.assertEqual(self.bot.storage.meme_settings(1)["next_post_at"], 15400)
 
     async def test_old_daily_schedule_migrates_without_losing_channel(self):
         from bot.services.storage import Storage
@@ -184,6 +185,28 @@ class MemeTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(self.cog, "post", new_callable=AsyncMock) as post:
             await self.cog.deliver_memes()
             post.assert_not_awaited()
+
+    async def test_schedule_database_failure_does_not_kill_delivery_loop(self):
+        with (
+            patch.object(
+                self.bot.storage,
+                "enabled_meme_settings",
+                side_effect=sqlite3.OperationalError("locked"),
+            ),
+            self.assertLogs("bot.cogs.memes", level="ERROR"),
+        ):
+            await self.cog.deliver_memes()
+        with patch.object(self.bot.storage, "enabled_meme_settings", return_value=[]) as settings:
+            await self.cog.deliver_memes()
+        settings.assert_called_once()
+
+    async def test_missing_reaction_permissions_do_not_block_delivery(self):
+        channel = unittest.mock.MagicMock(spec=discord.TextChannel)
+        channel.guild.id = 1
+        channel.permissions_for.return_value = discord.Permissions(
+            view_channel=True, send_messages=True, embed_links=True
+        )
+        self.cog.check_channel(channel, 1)
 
     async def test_permissions_failure_does_not_post(self):
         self.bot.storage.set_meme_settings(1, 2)

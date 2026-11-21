@@ -117,15 +117,15 @@ def help_content(topic="start"):
             ),
             (
                 "Choose the channel",
-                "An admin with Manage Server can use `/memes configure channel:#memes`. This defaults to on-demand posting.",
+                "An administrator can use `/memes configure channel:#memes`. This defaults to on-demand posting.",
             ),
             (
                 "Automatic posting",
-                "Use `/memes configure channel:#memes autopost:true interval_hours:3` to wait three hours between posts. The first post follows one full interval; manual memes restart the wait. Set `autopost:false` to stop automatic posts. `/memes status` shows the current settings.",
+                "Use `/memes configure channel:#memes autopost:true interval_hours:3` to wait three hours between posts. The first post follows one full interval; manual memes do not delay automatic posts. Set `autopost:false` to stop automatic posts. `/memes status` shows the current settings.",
             ),
             (
                 "Permissions",
-                "The bot needs View Channel, Send Messages, Embed Links, Read Message History and Add Reactions in the target channel.",
+                "The bot needs View Channel, Send Messages and Embed Links in the target channel. Read Message History and Add Reactions enable reactions; missing reaction permissions do not block posting.",
             ),
             (
                 "Source",

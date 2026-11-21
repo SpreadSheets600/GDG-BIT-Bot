@@ -86,10 +86,11 @@ class MemeStore:
                 "INSERT INTO MemePosts VALUES (?, ?, ?, ?, ?, ?)",
                 (guild_id, meme["postLink"], meme["url"], message_id, posted_at, scheduled_slot),
             )
-            db.execute(
-                "UPDATE MemeSettings SET next_post_at=? + interval_hours * 3600 WHERE guild_id=?",
-                (posted_at, guild_id),
-            )
+            if scheduled_slot is not None:
+                db.execute(
+                    "UPDATE MemeSettings SET next_post_at=? + interval_hours * 3600 WHERE guild_id=?",
+                    (posted_at, guild_id),
+                )
 
 
 def valid_meme(item):

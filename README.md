@@ -36,7 +36,7 @@ Verify account ownership using the bio code shown by `/connect`.
 /memes configure channel:#memes autopost:true interval_hours:3
 ```
 
-POTD settings require Administrator; meme settings require Manage Server. Meme intervals accept 1–168 hours. Set `autopost:false` to disable.
+POTD and meme settings require Administrator. Meme intervals accept 1–168 hours. Set `autopost:false` to disable. Automatic posting must be explicitly enabled with `autopost:true`; the first post follows one full interval. Manual `/meme` requests no longer postpone automatic delivery. Temporary schedule-loading failures retry the next minute, and missing reaction permissions do not block memes.
 
 ## Data
 
