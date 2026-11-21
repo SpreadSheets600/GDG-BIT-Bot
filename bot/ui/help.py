@@ -156,6 +156,14 @@ def help_content(topic="start"):
                 "`/potd configure channel:#potd [enabled]` · `/potd status`",
             ),
             ("Developer memes", "`/meme` · `/memes status` · `/memes configure` (admin)"),
+            (
+                "Server messages",
+                "`/rules` · `/socials` show saved messages. Admins copy a message into a tag with `/tags set name:rules message_link:...`. Admin-only prefix commands: `!rules`, `!socials`, `!tag set name message_link`, `!tag delete name`, `!tag list`, and any saved `!name`.",
+            ),
+            (
+                "Member counters (administrator only)",
+                "`/counters configure core_team:@CoreTeam` creates Total members and Core team voice counters. `/counters add role:@Role label:Team` adds a role counter. `/counters remove channel:...` stops tracking. Counts refresh every five minutes. Enable Server Members and Message Content intents in the Developer Portal; grant Manage Channels.",
+            ),
             ("Bot", "`/help [topic]` · `/ping` · `/info`"),
         ]
     for name, value in fields:

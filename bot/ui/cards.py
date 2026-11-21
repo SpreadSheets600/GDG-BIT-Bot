@@ -1,7 +1,10 @@
+import json
 from dataclasses import dataclass
+from datetime import datetime
 
 import discord
 
+from bot.services.problems import ServiceError
 from bot.ui.base import BotLayoutView, context
 from bot.ui.formatting import COLOR
 
@@ -102,6 +105,108 @@ class MessageCard(BotLayoutView):
 
 def notice(bot, title, message):
     return MessageCard(bot, CardContent(title=title, description=message))
+
+
+def _link(text, url):
+    return f"[{text}]({url})" if url else text
+
+
+def _gallery(*items):
+    return discord.ui.MediaGallery(
+        *(discord.MediaGalleryItem(url, spoiler=spoiler) for url, spoiler in items)
+    )
+
+
+def _embed_card(embed):
+    """Rebuild a Discord embed as a components v2 container."""
+    card = discord.ui.Container(color=embed.get("color"))
+    author = embed.get("author") or {}
+    head = []
+    if author.get("name"):
+        head.append(f"-# {_link(author['name'], author.get('url'))}")
+    if embed.get("title"):
+        head.append(f"### {_link(embed['title'], embed.get('url'))}")
+    if embed.get("description"):
+        head.append(embed["description"])
+    thumbnail = (embed.get("thumbnail") or {}).get("url")
+    if head and thumbnail:
+        card.add_item(
+            discord.ui.Section(
+                discord.ui.TextDisplay("\n".join(head)),
+                accessory=discord.ui.Thumbnail(thumbnail),
+            )
+        )
+    elif head:
+        card.add_item(discord.ui.TextDisplay("\n".join(head)))
+    elif thumbnail:
+        card.add_item(_gallery((thumbnail, False)))
+    fields = [f"**{field['name']}**\n{field['value']}" for field in embed.get("fields") or []]
+    if fields:
+        card.add_item(discord.ui.TextDisplay("\n\n".join(fields)))
+    image = (embed.get("image") or {}).get("url")
+    if image:
+        card.add_item(_gallery((image, False)))
+    footer = [(embed.get("footer") or {}).get("text")]
+    if embed.get("timestamp"):
+        stamp = datetime.fromisoformat(embed["timestamp"])
+        footer.append(f"<t:{int(stamp.timestamp())}:f>")
+    footer = " • ".join(part for part in footer if part)
+    if footer:
+        card.add_item(discord.ui.TextDisplay(f"-# {footer}"))
+    return card if card.items else None
+
+
+def copied_message(bot, data):
+    """A saved message snapshot: text, embeds as cards, its components, then attachments."""
+    view = BotLayoutView(bot)
+    if data.get("content"):
+        view.add_item(discord.ui.TextDisplay(data["content"]))
+    for embed in data.get("embeds", []):
+        card = _embed_card(embed)
+        if card:
+            view.add_item(card)
+    components = data.get("components", [])
+    if components:
+        for item in discord.ui.DesignerView.from_dict(components, timeout=None).children:
+            view.add_item(item)
+    # Uploads already shown by the components (e.g. in a media gallery) are not repeated.
+    shown = json.dumps(components)
+    attachments = [
+        item for item in data.get("attachments", []) if item["url"].split("?")[0] not in shown
+    ]
+    media = [
+        (item["url"], item.get("spoiler", False))
+        for item in attachments
+        if item.get("content_type", "").startswith(("image/", "video/"))
+    ]
+    if media:
+        view.add_item(_gallery(*media))
+    files = [
+        f"📎 {_link(item['filename'], item['url'])}"
+        for item in attachments
+        if not item.get("content_type", "").startswith(("image/", "video/"))
+    ]
+    if files:
+        view.add_item(discord.ui.TextDisplay("\n".join(files)))
+    return view
+
+
+def check_message_limits(view):
+    """Discord allows 40 components and 4000 characters of text per v2 message."""
+    count = text = 0
+    stack = list(view.to_components())
+    while stack:
+        item = stack.pop()
+        count += 1
+        text += len(item.get("content", ""))
+        stack.extend(item.get("components", []))
+        if item.get("accessory"):
+            stack.append(item["accessory"])
+    if count > 40 or text > 4000:
+        raise ServiceError(
+            "That message is too large to repost (Discord allows 4000 characters "
+            "and 40 parts per message). Split it into smaller messages."
+        )
 
 
 def verification_row(bot, provider):

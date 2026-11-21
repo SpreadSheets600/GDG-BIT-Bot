@@ -6,15 +6,17 @@ from bot.services.community_storage import CommunityStore
 from bot.services.memes import MemeStore
 from bot.services.platforms import platform_name
 from bot.services.problems import ServiceError
+from bot.services.server_tools import ServerToolsStore
 
 
-class Storage(CommunityStore, MemeStore):
+class Storage(CommunityStore, MemeStore, ServerToolsStore):
     def __init__(self, path: Path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             self.init_community(db)
             self.init_memes(db)
+            self.init_server_tools(db)
             db.execute(
                 "CREATE TABLE IF NOT EXISTS POTDSettings (\n                guild_id INTEGER PRIMARY KEY, channel_id INTEGER NOT NULL,\n                enabled INTEGER NOT NULL DEFAULT 1)"
             )

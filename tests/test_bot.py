@@ -328,10 +328,14 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                 "history",
                 "details",
                 "potd",
+                "rules",
+                "socials",
+                "tags",
+                "counters",
             },
         )
-        self.assertFalse(self.bot.intents.message_content)
-        self.assertFalse(self.bot.intents.members)
+        self.assertTrue(self.bot.intents.message_content)
+        self.assertTrue(self.bot.intents.members)
         for command in self.bot.pending_application_commands:
             self.assertIn("name", command.to_dict())
 

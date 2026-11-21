@@ -30,36 +30,53 @@ def optional_id(name):
 
 class POTDBot(discord.Bot):
     def __init__(self, *, database_path=None, guild_id=None, channel_id=None):
+        intents = discord.Intents.default()
+        intents.members = True
+        intents.message_content = True
         super().__init__(
-            intents=discord.Intents.default(),
+            intents=intents,
             debug_guilds=[guild_id] if guild_id else None,
             allowed_mentions=discord.AllowedMentions.none(),
-            activity=discord.Game(name="/leetcode potd view | /gfg potd view"),
+            activity=discord.Activity(type=discord.ActivityType.watching, name="Over GDG BIT"),
         )
         self.started_at = datetime.now(UTC)
         self.problems = ProblemService()
         self.storage = Storage(database_path or ROOT / "data" / "bot.db")
         self.progress = ProgressService(self.storage, self.problems)
         self.potd_channel_id = channel_id
+
         self.load_extension("bot.cogs.platforms")
         self.load_extension("bot.cogs.accounts")
         self.load_extension("bot.cogs.community")
         self.load_extension("bot.cogs.help")
         self.load_extension("bot.cogs.memes")
         self.load_extension("bot.cogs.potd_settings")
+        self.load_extension("bot.cogs.server_tools")
 
     async def close(self):
-        cog = self.get_cog("PlatformsCog")
-        if cog:
-            task = cog.deliver_daily.get_task()
-            cog.deliver_daily.cancel()
+        server_tools = self.get_cog("ServerToolsCog")
+        if server_tools:
+            task = server_tools.refresh_counters.get_task()
+            server_tools.refresh_counters.cancel()
             if task:
                 with suppress(asyncio.CancelledError):
                     await task
+        cog = self.get_cog("PlatformsCog")
+
+        if cog:
+            task = cog.deliver_daily.get_task()
+            cog.deliver_daily.cancel()
+
+            if task:
+                with suppress(asyncio.CancelledError):
+                    await task
+
         memes = self.get_cog("MemesCog")
+
         if memes:
             task = memes.deliver_memes.get_task()
             memes.deliver_memes.cancel()
+
             if task:
                 with suppress(asyncio.CancelledError):
                     await task
@@ -78,12 +95,16 @@ class POTDBot(discord.Bot):
 
     async def on_application_command_error(self, ctx, error):
         original = getattr(error, "original", error)
+
         if isinstance(original, ServiceError):
             message = str(original)
+
         elif isinstance(original, commands.CommandOnCooldown):
             message = f"Try again in {original.retry_after:.1f} seconds."
+
         elif isinstance(original, commands.CheckFailure):
             message = "You do not have permission to use this command."
+
         else:
             log.error(
                 "Command %s failed",
@@ -116,40 +137,43 @@ def create_bot(**kwargs):
             )
         )
 
-    @bot.slash_command(name="info", description="Show bot information and available commands")
+    @bot.slash_command(name="info", description="About the bot and its creator")
     async def info(ctx: discord.ApplicationContext):
         embed = CardContent(
-            title="GDG BIT · Problem of the Day",
+            title="GDG BIT Discord Bot",
             color=4359668,
-            description="Daily coding problems, hints, profiles and solving stats.",
+            description="The GDG BIT community bot: LeetCode and GeeksforGeeks daily problems, verified solves, XP, streaks, leaderboards, developer memes, server tags and member counters.",
         )
+
         embed.add_field(
-            name="Daily problems",
-            value="`/leetcode potd view`\n`/leetcode potd hint` (private)\n`/gfg potd view`",
+            name="Developer",
+            value="`SpreadSheets600`",
             inline=False,
         )
+
         embed.add_field(
-            name="Profiles",
-            value="`/leetcode profile` · `/leetcode stats`\n`/register` · `/register_leetcode_id` · `/register_gfg_id` · `/register_cf_id`",
+            name="Links",
+            value="[Website](https://spreadsheets600.buzz)\n[GitHub](https://github.com/SpreadSheets600/GDG-BIT-POTD)",
             inline=False,
         )
+
         embed.add_field(
-            name="Community",
-            value="`/connect leetcode` or `/connect gfg` → verify your bio code\n`/solved` · `/profile` · `/streak` · `/leaderboard` · `/solvers` · `/history`\nMark a solve → linked-account verification → server XP and streak.\n`/leaderboard` combines this server's LeetCode + GFG check-ins; filter by platform if desired.",
+            name="Bot status",
+            value=f"Servers: **{len(bot.guilds)}**\nUptime: **{str(datetime.now(UTC) - bot.started_at).split('.')[0]}**",
             inline=False,
         )
-        embed.add_field(
-            name="Developer memes",
-            value="`/meme` posts to the configured meme channel. `/memes status` shows settings; admins use `/memes configure`.",
-            inline=False,
-        )
+
         embed.add_field(
             name="Help", value="Use `/help` for setup, commands and troubleshooting.", inline=False
         )
-        embed.add_field(
-            name="Source", value="[GitHub](https://github.com/SpreadSheets600/GDG-BIT-POTD)"
-        )
+
+        embed.add_field(name="Server tools", value="`/rules` · `/socials` · `/tags` · `/counters`")
+
         if bot.user:
+            embed.add_field(
+                name="Created At",
+                value=f"`{bot.user.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC`",
+            )
             embed.set_thumbnail(url=bot.user.display_avatar.url)
         await ctx.respond(view=MessageCard(bot, embed))
 
